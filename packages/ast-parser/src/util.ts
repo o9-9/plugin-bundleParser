@@ -24,6 +24,7 @@ import {
     isMethodDeclaration,
     isNamespaceImport as _TS_isNamespaceImport,
     isNumericLiteral,
+    isObjectLiteralExpression,
     isPropertyAccessExpression,
     isRegularExpressionLiteral,
     isReturnStatement,
@@ -42,6 +43,7 @@ import {
     type SourceFile,
     SyntaxKind,
     type SyntaxList,
+    type Token,
     type VariableDeclaration,
 } from "typescript";
 
@@ -205,7 +207,7 @@ export function one<
 ): R | undefined {
     const filter = arr.filter<R>(func);
 
-    return filter.length === 1 ? filter[0] : undefined
+    return filter.length === 1 ? filter[0] : undefined;
 }
 
 export function isDefaultImport(x: Identifier): x is WithParent<typeof x, ImportClause> {
@@ -540,4 +542,16 @@ function isNodeKind(kind: SyntaxKind) {
 
 export function nonNull<T>(x: T | null | undefined): x is T {
     return x != null;
+}
+
+export function isEmptyObjectLiteral(node: Node): node is ObjectLiteralExpression {
+    return isObjectLiteralExpression(node) && node.properties.length === 0;
+}
+
+export function isCommaExpression(node: Node): node is
+  & BinaryExpression
+  & {
+      readonly operatorToken: Token<SyntaxKind.CommaToken>;
+  } {
+    return isBinaryExpression(node) && node.operatorToken.kind === SyntaxKind.CommaToken;
 }

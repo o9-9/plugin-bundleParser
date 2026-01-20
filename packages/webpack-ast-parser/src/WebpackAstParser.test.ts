@@ -170,6 +170,35 @@ describe("WebpackAstParser", function () {
                     },
                 });
             });
+            it("parses a module with enum exports", function () {
+                const parser = new WebpackAstParser(getFile("webpack/wreq.d/enums.js"));
+                const map = parser.getExportMap();
+
+                expect(map.Si).toMatchInlineSnapshot(`
+                  [
+                    [
+                      {
+                        "character": 8,
+                        "line": 44,
+                      },
+                      {
+                        "character": 10,
+                        "line": 44,
+                      },
+                    ],
+                    [
+                      {
+                        "character": 12,
+                        "line": 148,
+                      },
+                      {
+                        "character": 9,
+                        "line": 156,
+                      },
+                    ],
+                  ]
+                `);
+            });
         });
         describe("e.exports", function () {
             it("parses a module with an object literal export (class names)", function () {

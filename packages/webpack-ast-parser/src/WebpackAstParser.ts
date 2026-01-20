@@ -1,6 +1,8 @@
 import { Format } from "@sadan4/devtools-pretty-printer";
 import { type VariableInfo } from "ts-api-utils";
 import {
+    type AssignmentExpression,
+    type AssignmentOperatorToken,
     type CallExpression,
     type ClassDeclaration,
     createSourceFile,
@@ -23,6 +25,7 @@ import {
     isPropertyAccessExpression,
     isPropertyAssignment,
     isPropertyDeclaration,
+    isReturnStatement,
     isSemicolonClassElement,
     isSpreadAssignment,
     isStringLiteralLike,
@@ -46,6 +49,8 @@ import {
     findReturnPropertyAccessExpression,
     getLeadingIdentifier,
     isAssignmentExpression,
+    isCommaExpression,
+    isEmptyObjectLiteral,
     isFunctionish,
     isLiteralish,
     isSyntaxList,
@@ -1163,6 +1168,102 @@ export class WebpackAstParser extends AstParser {
             .filter((x) => x !== false) as any);
     }
 
+    private tryRawMakeExportMapForEnumIIFE(node: CallExpression): RawExportMap | undefined {
+        // style 1
+        // function (e) {
+        // return e.foo = "foo",
+        // e.bar = "bar",
+        // e
+        // }({})
+        noMatch: {
+            const args = node.arguments;
+            const func = node.expression;
+
+            if (args.length !== 1
+              || !isEmptyObjectLiteral(args[0])
+              || !isFunctionExpression(func)
+              || func.body.statements.length !== 1
+              || func.parameters.length !== 1) {
+                break noMatch;
+            }
+
+            const [{ name: enumParam }] = func.parameters;
+            const [stmt] = func.body.statements;
+
+            // FIXME: assert no random things on enumParam (..., private, decorators)
+            if (!isReturnStatement(stmt) || !isIdentifier(enumParam)) {
+                break noMatch;
+            }
+
+            const initBinExp = stmt.expression;
+
+            if (!initBinExp || !isBinaryExpression(initBinExp)) {
+                break noMatch;
+            }
+
+            let curExpr = initBinExp.right;
+            // the final `,e` in the return statement
+            const lastLeft = initBinExp.left;
+
+            if (!isIdentifier(lastLeft) || !this.isUseOf(lastLeft, enumParam)) {
+                break noMatch;
+            }
+
+            const ret: RawExportMap = {};
+
+            // if falsy, break noMatch;
+            const processEnumAssignment
+                = ({ left, right }: AssignmentExpression<AssignmentOperatorToken>): true | void => {
+                    if (!isPropertyAccessExpression(left)) {
+                        return;
+                    }
+
+                    const { expression: paramUse, name: entryName } = left;
+
+                    if (!isIdentifier(entryName)
+                      || !isIdentifier(paramUse)
+                      || !this.isUseOf(paramUse, enumParam)) {
+                        return;
+                    }
+                    // TODO: debug assert no entry exists
+                    ret[entryName.getText()] = this.rawMakeExportMapRecursive(right);
+                    return true;
+                };
+
+            while (isBinaryExpression(curExpr)) {
+                const enumAssignment = curExpr.left;
+
+                // we only expect assignment expressions in the comma chain
+                if (!isAssignmentExpression(enumAssignment)) {
+                    break noMatch;
+                }
+                // if (entry is invalid)
+                if (!processEnumAssignment(enumAssignment)) {
+                    break noMatch;
+                }
+                // we are in the middle of the enum assignment chain
+                if (isCommaExpression(curExpr.right)) {
+                    curExpr = curExpr.right;
+                    continue;
+                    // we reached the bottom of the enum assignment chain
+                } else if (isAssignmentExpression(curExpr.right)) {
+                    if (!processEnumAssignment(curExpr.right)) {
+                        break noMatch;
+                    }
+                    break;
+                    // we didn't reach the end and the comma chain ends
+                } else {
+                    break noMatch;
+                }
+            }
+            // parsed everything, return result
+            return ret;
+        }
+        // TODO: add more styles
+
+        return undefined;
+    }
+
     rawMakeExportMapRecursive(node: Node): RawExportMap | RawExportRange {
         if (!node)
             throw new Error("node should not be undefined");
@@ -1237,6 +1338,12 @@ export class WebpackAstParser extends AstParser {
                 return [node.name];
             return [node];
         } else if (isCallExpression(node)) {
+            const maybeEnumExport = this.tryRawMakeExportMapForEnumIIFE(node);
+
+            if (maybeEnumExport) {
+                return maybeEnumExport;
+            }
+
             return [node];
         } else if (isIdentifier(node)) {
             const trail = this.unwrapVariableDeclaration(node);
