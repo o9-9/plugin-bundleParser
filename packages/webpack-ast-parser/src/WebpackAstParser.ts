@@ -395,24 +395,22 @@ export class WebpackAstParser extends AstParser {
         let [requiredModule, ...names] = importChain;
         let moduleId: number | undefined;
 
-        {
-            // TODO: should this check if requiredModule.expression is wreq
-            // i think probably not, no real need
-            if (isCallExpression(requiredModule) && requiredModule.arguments.length === 1) {
-                const [arg] = requiredModule.arguments;
+        // TODO: should this check if requiredModule.expression is wreq
+        // i think probably not, no real need
+        if (isCallExpression(requiredModule) && requiredModule.arguments.length === 1) {
+            const [arg] = requiredModule.arguments;
 
-                if (isNumericLiteral(arg)) {
-                    moduleId = +arg.text;
-                }
-            } else if (isIdentifier(requiredModule)) {
-                const dec = this.getVarInfoFromUse(requiredModule);
-
-                if (!dec) {
-                    return;
-                }
-
-                moduleId = this.getModuleIdForImport(dec);
+            if (isNumericLiteral(arg)) {
+                moduleId = +arg.text;
             }
+        } else if (isIdentifier(requiredModule)) {
+            const dec = this.getVarInfoFromUse(requiredModule);
+
+            if (!dec) {
+                return;
+            }
+
+            moduleId = this.getModuleIdForImport(dec);
         }
 
         if (!moduleId)

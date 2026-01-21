@@ -3,6 +3,10 @@
         "Functionish",
         "Literalish",
         "NITROWEEN",
-        "SNOWGLOBE"
-    ]
+        "SNOWGLOBE",
+        "vitest"
+    ],
+    "coverage-gutters.coverageFileNames": [
+        "coverage/clover.xml",
+    ],
 }
