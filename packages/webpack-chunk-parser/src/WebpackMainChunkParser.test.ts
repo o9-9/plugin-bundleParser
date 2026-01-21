@@ -52,7 +52,7 @@ describe(
         describe("with full file", function () {
             const parser = fullParser;
 
-            commonTests(parser, 10_000);
+            commonTests(parser, 30_000);
         });
         describe("fullFile results are the same as partFile results", function () {
             it("js chunk hashes match", function () {
