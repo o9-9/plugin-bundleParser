@@ -5,6 +5,8 @@ function(e, t, n) {
     n.d(t, {
         U: () => _u,
         I: () => _i,
+        E: () => style1Enum,
+        F: () => style2Enum
     });
     var r = n(555001),
         _5 = n(555555);
@@ -17,4 +19,15 @@ function(e, t, n) {
     function _i() {
         return "abcdef";
     }
+    var style1Enum = function(e) {
+        return e.FOO1 = "FOO1",
+        e.BAR1 = "BAR1",
+        e
+    }({})
+      , style2Enum = function(e) {
+        return e[e.FOO2 = 1] = "FOO2",
+        e[e.BAR2 = 2] = "BAR2",
+        e
+    }({});
+
 }

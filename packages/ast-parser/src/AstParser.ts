@@ -207,7 +207,7 @@ export class AstParser {
 
         do {
             toRet.unshift(cur.name);
-            if (isLeftHandSideExpression(cur.expression)) {
+            if (isLeftHandSideExpression(cur.expression) && !isPropertyAccessExpression(cur.expression)) {
                 toRet.unshift(cur.expression);
                 return toRet;
             }

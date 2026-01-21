@@ -1,4 +1,16 @@
-import { type Expression, isArrayLiteralExpression, isBigIntLiteral, isBinaryExpression, isNumericLiteral, isObjectLiteralExpression, isPropertyAssignment, isStringLiteralLike, type LiteralToken, type ObjectLiteralExpression, SyntaxKind } from "typescript";
+import {
+    type Expression,
+    isArrayLiteralExpression,
+    isBigIntLiteral,
+    isBinaryExpression,
+    isNumericLiteral,
+    isObjectLiteralExpression,
+    isPropertyAssignment,
+    isStringLiteralLike,
+    type LiteralToken,
+    type ObjectLiteralExpression,
+    SyntaxKind,
+} from "typescript";
 
 import { AstParser } from "@vencord-companion/ast-parser/AstParser";
 import { isLiteralish } from "@vencord-companion/ast-parser/util";

@@ -17,6 +17,7 @@ function(e, t, n) {
         return _2.H(1, _2.J(2, 3)) + _2.H(4, 5);
     }
     function func() {
+        console.log(_3.E.FOO1, _3.F.BAR2);
         _8().A();
         func_2();
         return (0, r.jsx)(_2.G, {
@@ -38,6 +39,12 @@ function(e, t, n) {
     }
     function func_3() {
         const foo = n(333333).U;
+        // use of enum, without member access
+        console.log(_3.E, _3.F);
+        console.log(
+            _3.E.FOO1, _3.E.FOO2,
+            _3.F.BAR1, _3.F.BAR2,
+        )
         return foo;
     }
 }

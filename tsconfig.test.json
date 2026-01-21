@@ -27,7 +27,10 @@
         },
         {
             "path": "packages/webpack-chunk-parser"
-        }
+        },
+        {
+            "path": "packages/global-env-parser"
+        },
     ],
     "include": [
         "packages/**/*.test.ts",

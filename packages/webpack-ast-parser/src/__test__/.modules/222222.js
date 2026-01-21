@@ -16,6 +16,9 @@ function(e, t, n) {
         return p1 - p2
     }
     function _g() {
+        // computed enum access
+        let c = _(), c2 = _();
+        console.log(_3.E[c], _3.F[c2]);
         return (0, r.jsx)(_3.U, {
             children: (0, r.jsxs)("div", {
                 children: [

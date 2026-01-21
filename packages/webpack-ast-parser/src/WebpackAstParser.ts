@@ -6,6 +6,7 @@ import {
     type CallExpression,
     type ClassDeclaration,
     createSourceFile,
+    type ElementAccessExpression,
     type Expression,
     type Identifier,
     isAccessor,
@@ -15,6 +16,7 @@ import {
     isCallExpression,
     isClassDeclaration,
     isConstructorDeclaration,
+    isElementAccessExpression,
     isExpressionStatement,
     isFunctionExpression,
     isIdentifier,
@@ -35,6 +37,7 @@ import {
     type Node,
     type NumericLiteral,
     type ObjectLiteralExpression,
+    type PropertyAccessExpression,
     ScriptKind,
     ScriptTarget,
     type SourceFile,
@@ -77,7 +80,15 @@ import type {
     Reference,
     Store,
 } from "./types";
-import { allEntries, assertNotHover, containsPosition, formatModule, fromEntries } from "./util";
+import {
+    allEntries,
+    assertNotHover,
+    flattenFilteredExportMap,
+    formatModule,
+    fromEntries,
+    makeFilteredExportMap,
+    matchExportChain,
+} from "./util";
 
 let logger: Logger = NoopLogger;
 
@@ -623,13 +634,19 @@ export class WebpackAstParser extends AstParser {
         const moduleExports = this.getExportMap();
         const where = this.getModulesThatRequireThisModule();
         const locs: Reference[] = [];
+        const filteredExportMap = makeFilteredExportMap(moduleExports, position) ?? {};
 
-        const exportedNames = Object.entries(moduleExports)
-            .filter(([, exportRange]) => containsPosition(exportRange, position));
+        if (Array.isArray(filteredExportMap)) {
+            throw new Error("should not be an array");
+        }
+
+        const exportedNames = flattenFilteredExportMap(filteredExportMap);
+        // const exportedNames = Object.entries(moduleExports)
+        //     .filter(([, exportRange]) => containsPosition(exportRange, position));
 
 
         // TODO: support jumping from object literals
-        for (const [_exportedName] of exportedNames) {
+        for (const _exportedName of exportedNames) {
             // needed to workaround a v8 bug which crashes when a breakpoint falls on the for loop
             const exportedName = _exportedName;
             const seen: Record<string, Set<String>> = {};
@@ -640,7 +657,7 @@ export class WebpackAstParser extends AstParser {
             type ElementType = [
                 moduleId: string,
                 importedId: string,
-                exportName: AnyExportKey,
+                exportName: AnyExportKey[],
             ];
 
             const left: ElementType[] = where?.sync.map((x) => [x, this.moduleId!, exportedName] as const) ?? [];
@@ -664,12 +681,15 @@ export class WebpackAstParser extends AstParser {
                 // FIXME: this covers up a bug in {@link doesReExport}
                 // if (uses.length === 0)
                 //     continue;
-                const exportedAs = parser.doesReExportFromImport(importedId, exportedName);
+                // FIXME: support nested re-exports
+                const exportedAs = parser.doesReExportFromImport(importedId, exportedName[0]);
 
                 if (exportedAs) {
                     const where = parser.getModulesThatRequireThisModule();
 
-                    left.push(...where?.sync.map((x) => [x, parser.moduleId!, exportedAs] as ElementType) ?? []);
+                    // FIXME: this is just wrong for multi-level re-exports
+                    // eslint-disable-next-line @stylistic/max-len
+                    left.push(...where?.sync.map((x) => [x, parser.moduleId!, [exportedAs]] satisfies ElementType) ?? []);
                 }
 
                 locs.push(...uses.map((x): Reference => {
@@ -751,9 +771,10 @@ export class WebpackAstParser extends AstParser {
 
     /**
      * Figure out if this module re-exports another given the module id of the other and the name of the export from the other module
-   * @param moduleId the module id that {@link exportName} is from
-   * @param exportName the name of the re-exported export
-   */
+     * @param moduleId the module id that {@link exportName} is from
+     * @param exportName the name of the re-exported export
+     * only supports one-level re-exports despite it's signature
+     */
     public doesReExportFromImport(
         moduleId: string,
         exportName: AnyExportKey,
@@ -998,9 +1019,12 @@ export class WebpackAstParser extends AstParser {
      * TODO: support nested exports eg: `wreq(123).ZP.storeMethod()`
      * @returns the ranges where the export is used in this file
      */
-    getUsesOfImport(moduleId: string, exportName: string | symbol): Range[] {
-        if (!this.wreq)
+    getUsesOfImport(moduleId: string, exportName_: AnyExportKey[] | AnyExportKey): Range[] {
+        const exportName: AnyExportKey[] = Array.isArray(exportName_) ? exportName_ : [exportName_];
+
+        if (!this.wreq) {
             throw new Error("Wreq is not used in this file");
+        }
         if (typeof exportName === "symbol" && exportName !== WebpackAstParser.SYM_CJS_DEFAULT) {
             throw new Error("Invalid symbol for exportName");
         }
@@ -1056,44 +1080,34 @@ export class WebpackAstParser extends AstParser {
                         if (!decl || !isIdentifier(decl))
                             break nmd;
 
-                        this.vars
-                            .get(decl)
-                            ?.uses?.map((x) => x.location.parent)
-                            .filter(isCallExpression)
-                            .map((calledUse): Range[] | undefined => {
-                                if (exportName === WebpackAstParser.SYM_CJS_DEFAULT) {
-                                    // TODO: handle default exports other than just functions
-                                    return isCallExpression(calledUse.parent)
-                                        ? [this.makeRangeFromAstNode(calledUse)]
-                                        : undefined;
-                                } else if (typeof exportName === "string") {
-                                    const expr = findParent(
-                                        calledUse,
-                                        isPropertyAccessExpression,
-                                    );
+                        for (const { location: { parent: calledUse } } of this.vars.get(decl)?.uses ?? []) {
+                            if (!isCallExpression(calledUse)) {
+                                continue;
+                            }
 
-                                    if (
-                                        !(
-                                            !!expr
-                                            && expr.expression === calledUse
-                                            && expr.name.text === exportName
-                                        )
-                                    )
-                                        return undefined;
-
-                                    return [this.makeRangeFromAstNode(expr.name)];
+                            if (exportName[0] === WebpackAstParser.SYM_CJS_DEFAULT) {
+                                // a()()
+                                if (!isCallExpression(calledUse.parent)) {
+                                    continue;
                                 }
-                                throw new Error("Invalid exportName");
-                            })
-                            .filter((x) => x !== undefined)
-                            .forEach((use) => {
-                                const final = use.at(-1);
+                                // TODO: handle default exports other than just functions
+                                uses.push(this.makeRangeFromAstNode(calledUse));
+                            } else {
+                                if (!isPropertyAccessExpression(calledUse.parent)) {
+                                    continue;
+                                }
 
-                                if (!final)
-                                    throw new Error("Final is undefined, this should have been filtered out by the previous line as there should be no empty arrays");
+                                const outerPropExpr = lastParent(calledUse, isPropertyAccessExpression);
+                                const fullUsageChain = this.flattenPropertyAccessExpression(outerPropExpr);
+                                const lastMatch = matchExportChain(fullUsageChain, exportName);
 
-                                uses.push(final);
-                            });
+                                if (!lastMatch) {
+                                    continue;
+                                }
+
+                                uses.push(this.makeRangeFromAstNode(lastMatch));
+                            }
+                        }
                     }
                 }
 
@@ -1103,10 +1117,15 @@ export class WebpackAstParser extends AstParser {
                     if (!isIdentifier(location.parent.name))
                         continue;
 
-                    if (location.parent.name.getText() !== exportName)
-                        continue;
+                    const outerPropExpr = lastParent(location, isPropertyAccessExpression);
+                    const fullUsageChain = this.flattenPropertyAccessExpression(outerPropExpr);
+                    const lastMatch = matchExportChain(fullUsageChain, exportName);
 
-                    uses.push(this.makeRangeFromAstNode(location.parent.name));
+                    if (!lastMatch) {
+                        continue;
+                    }
+
+                    uses.push(this.makeRangeFromAstNode(lastMatch));
                 }
                 continue;
             }
@@ -1119,10 +1138,15 @@ export class WebpackAstParser extends AstParser {
                 if (!isIdentifier(direct.parent.name))
                     continue;
 
-                if (direct.parent.name.text !== exportName)
-                    continue;
+                const outerPropExpr = lastParent(direct, isPropertyAccessExpression);
+                const fullUsageChain = this.flattenPropertyAccessExpression(outerPropExpr);
+                const lastMatch = matchExportChain(fullUsageChain, exportName);
 
-                uses.push(this.makeRangeFromAstNode(direct.parent.name));
+                if (!lastMatch) {
+                    continue;
+                }
+
+                uses.push(this.makeRangeFromAstNode(lastMatch));
             }
         }
         return uses;
@@ -1169,12 +1193,23 @@ export class WebpackAstParser extends AstParser {
     }
 
     private tryRawMakeExportMapForEnumIIFE(node: CallExpression): RawExportMap | undefined {
+        // TODO: styles 1 and 2 are very similar, merge code for them?
+
         // style 1
         // function (e) {
         // return e.foo = "foo",
         // e.bar = "bar",
         // e
         // }({})
+
+        // style 2
+        // function (e) {
+        // return e[e.foo = 1] = "foo",
+        // e[e.bar = 2] = "bar",
+        // e
+        // }({})
+
+        // style 1 or 2
         noMatch: {
             const args = node.arguments;
             const func = node.expression;
@@ -1201,23 +1236,21 @@ export class WebpackAstParser extends AstParser {
                 break noMatch;
             }
 
-            let curExpr = initBinExp.right;
+            let curExpr = initBinExp.left;
             // the final `,e` in the return statement
-            const lastLeft = initBinExp.left;
+            const lastRight = initBinExp.right;
 
-            if (!isIdentifier(lastLeft) || !this.isUseOf(lastLeft, enumParam)) {
+            if (!isIdentifier(lastRight) || !this.isUseOf(lastRight, enumParam)) {
                 break noMatch;
             }
+
+            type ProcessFunc = (assignment: AssignmentExpression<AssignmentOperatorToken>) => true | void;
 
             const ret: RawExportMap = {};
 
             // if falsy, break noMatch;
-            const processEnumAssignment
-                = ({ left, right }: AssignmentExpression<AssignmentOperatorToken>): true | void => {
-                    if (!isPropertyAccessExpression(left)) {
-                        return;
-                    }
-
+            const processEnumAssignment: ProcessFunc = ({ left, right }) => {
+                const processStyle1 = (left: PropertyAccessExpression): true | void => {
                     const { expression: paramUse, name: entryName } = left;
 
                     if (!isIdentifier(entryName)
@@ -1230,8 +1263,30 @@ export class WebpackAstParser extends AstParser {
                     return true;
                 };
 
+                const processStyle2 = (left: ElementAccessExpression): true | void => {
+                    const { expression: paramUse, argumentExpression: style1Entry } = left;
+                    // TODO: debug assert names match in both assignments
+                    // TODO: debug only assertion
+
+                    if (!isAssignmentExpression(style1Entry)
+                      || !isIdentifier(paramUse)
+                      || !this.isUseOf(paramUse, enumParam)) {
+                        return;
+                    }
+
+                    return processEnumAssignment(style1Entry);
+                };
+
+                if (isPropertyAccessExpression(left)) {
+                    return processStyle1(left);
+                } else if (isElementAccessExpression(left)) {
+                    return processStyle2(left);
+                }
+                // no style matched
+            };
+
             while (isBinaryExpression(curExpr)) {
-                const enumAssignment = curExpr.left;
+                const enumAssignment = curExpr.right;
 
                 // we only expect assignment expressions in the comma chain
                 if (!isAssignmentExpression(enumAssignment)) {
@@ -1242,12 +1297,12 @@ export class WebpackAstParser extends AstParser {
                     break noMatch;
                 }
                 // we are in the middle of the enum assignment chain
-                if (isCommaExpression(curExpr.right)) {
-                    curExpr = curExpr.right;
+                if (isCommaExpression(curExpr.left)) {
+                    curExpr = curExpr.left;
                     continue;
                     // we reached the bottom of the enum assignment chain
-                } else if (isAssignmentExpression(curExpr.right)) {
-                    if (!processEnumAssignment(curExpr.right)) {
+                } else if (isAssignmentExpression(curExpr.left)) {
+                    if (!processEnumAssignment(curExpr.left)) {
                         break noMatch;
                     }
                     break;
@@ -1256,9 +1311,19 @@ export class WebpackAstParser extends AstParser {
                     break noMatch;
                 }
             }
+
+            const maybeDecl = node.parent;
+
+            // TODO: debug assert always true
+            if (isVariableDeclaration(maybeDecl) && isIdentifier(maybeDecl.name)) {
+                ret[WebpackAstParser.SYM_CJS_DEFAULT] = [maybeDecl.name];
+            }
+
             // parsed everything, return result
             return ret;
         }
+
+
         // TODO: add more styles
 
         return undefined;

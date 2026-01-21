@@ -13,7 +13,8 @@
     "lint": "eslint",
     "build-all": "pnpm -r --parallel build",
     "pack-all": "pnpm build-all && pnpm -r --filter !. pack",
-    "pub-all": "pnpm build-all && pnpm -r publish --access public"
+    "pub-all": "pnpm build-all && pnpm -r publish --access public",
+    "watch": "tsc -b -w"
   },
   "keywords": [],
   "author": "",

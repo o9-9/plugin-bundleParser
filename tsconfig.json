@@ -13,11 +13,17 @@
             "path": "packages/webpack-ast-parser",
         },
         {
+            "path": "packages/webpack-chunk-parser",
+        },
+        {
+            "path": "packages/global-env-parser",
+        },
+        {
             "path": "./tsconfig.config.json"
         },
         {
             "path": "./tsconfig.test.json"
-        }
+        },
     ],
     "include": [],
     "exclude": [
