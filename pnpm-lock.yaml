@@ -49,8 +49,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 3.2.4(vitest@3.2.4)
-        specifier: ^4.0.16
-        version: 4.0.16(vitest@3.2.4)
       '@vitest/ui':
         specifier: 'catalog:'
         version: 3.2.4(vitest@3.2.4)
@@ -679,11 +677,6 @@ packages:
     peerDependencies:
       '@vitest/browser': 3.2.4
       vitest: 3.2.4
-  '@vitest/coverage-v8@4.0.16':
-    resolution: {integrity: sha512-2rNdjEIsPRzsdu6/9Eq0AYAzYdpP6Bx9cje9tL3FE5XzXRQF1fNU9pe/1yE8fCrS0HD+fBtt6gLPh6LI57tX7A==}
-    peerDependencies:
-      '@vitest/browser': 4.0.16
-      vitest: 4.0.16
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -705,9 +698,6 @@ packages:
   '@vitest/pretty-format@3.2.4':
     resolution: {integrity: sha512-IVNZik8IVRJRTr9fxlitMKeJeXFFFN0JaB9PHPGQ8NKQbGpfjlTx9zO4RefN8gp7eqjNy8nyK3NZmBzOPeIxtA==}
 
-  '@vitest/pretty-format@4.0.16':
-    resolution: {integrity: sha512-eNCYNsSty9xJKi/UdVD8Ou16alu7AYiS2fCPRs0b1OdhJiV89buAXQLpTbe+X8V9L6qrs9CqyvU7OaAopJYPsA==}
-
   '@vitest/runner@3.2.4':
     resolution: {integrity: sha512-oukfKT9Mk41LreEW09vt45f8wx7DordoWUZMYdY/cyAk7w5TWkTRCNZYF7sX7n2wB7jyGAl74OxgwhPgKaqDMQ==}
 
@@ -724,9 +714,6 @@ packages:
 
   '@vitest/utils@3.2.4':
     resolution: {integrity: sha512-fB2V0JFrQSMsCo9HiSq3Ezpdv4iYaXRG1Sx8edX3MwxfyNn83mKiGzOcH+Fkxt4MHxr3y42fQi1oeAInqgX2QA==}
-
-  '@vitest/utils@4.0.16':
-    resolution: {integrity: sha512-h8z9yYhV3e1LEfaQ3zdypIrnAg/9hguReGZoS7Gl0aBG5xgA410zBqECqmaF/+RkTggRsfnzc1XaAHA6bmUufA==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -1173,8 +1160,6 @@ packages:
 
   magicast@0.3.5:
     resolution: {integrity: sha512-L0WhttDl+2BOsybvEOLK7fW3UA0OQ0IQ2d6Zl2x/a6vVRs3bAY0ECOSHHeL5jD+SbOpOCUEi0y1DgHEn9Qn1AQ==}
-  magicast@0.5.1:
-    resolution: {integrity: sha512-xrHS24IxaLrvuo613F719wvOIv9xPHFWQHuvGUBmPnCA/3MQxKI3b+r7n1jAoDHmsbC5bRhTZYR77invLAxVnw==}
 
   make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
@@ -1216,9 +1201,6 @@ packages:
 
   node-releases@2.0.21:
     resolution: {integrity: sha512-5b0pgg78U3hwXkCM8Z9b2FJdPZlr9Psr9V2gQPESdGHqbntyFJKFW4r5TeWGFzafGY3hzs1JC62VEQMbl1JFkw==}
-
-  obug@2.1.1:
-    resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -1400,10 +1382,6 @@ packages:
 
   tinyrainbow@2.0.0:
     resolution: {integrity: sha512-op4nsTR47R6p0vMUUoYl/a+ljLFVtlfaXkLQmqfLR1qHma1h/ysYk4hEXZ880bf2CYgTskvTa/e196Vd5dDQXw==}
-    engines: {node: '>=14.0.0'}
-
-  tinyrainbow@3.0.3:
-    resolution: {integrity: sha512-PSkbLUoxOFRzJYjjxHJt9xro7D+iilgMX/C9lawzVuYiIdcihh9DXmVibBe8lmcFrRi/VzlPjBxbN7rH24q8/Q==}
     engines: {node: '>=14.0.0'}
 
   tinyspy@4.0.4:
@@ -1954,11 +1932,6 @@ snapshots:
       '@bcoe/v8-coverage': 1.0.2
       ast-v8-to-istanbul: 0.3.10
       debug: 4.4.3
-  '@vitest/coverage-v8@4.0.16(vitest@3.2.4)':
-    dependencies:
-      '@bcoe/v8-coverage': 1.0.2
-      '@vitest/utils': 4.0.16
-      ast-v8-to-istanbul: 0.3.10
       istanbul-lib-coverage: 3.2.2
       istanbul-lib-report: 3.0.1
       istanbul-lib-source-maps: 5.0.6
@@ -1968,10 +1941,6 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      magicast: 0.5.1
-      obug: 2.1.1
-      std-env: 3.10.0
-      tinyrainbow: 3.0.3
       vitest: 3.2.4(@types/node@24.6.2)(@vitest/ui@3.2.4)(jiti@2.6.1)
     transitivePeerDependencies:
       - supports-color
@@ -1995,10 +1964,6 @@ snapshots:
   '@vitest/pretty-format@3.2.4':
     dependencies:
       tinyrainbow: 2.0.0
-
-  '@vitest/pretty-format@4.0.16':
-    dependencies:
-      tinyrainbow: 3.0.3
 
   '@vitest/runner@3.2.4':
     dependencies:
@@ -2032,11 +1997,6 @@ snapshots:
       '@vitest/pretty-format': 3.2.4
       loupe: 3.2.1
       tinyrainbow: 2.0.0
-
-  '@vitest/utils@4.0.16':
-    dependencies:
-      '@vitest/pretty-format': 4.0.16
-      tinyrainbow: 3.0.3
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:
@@ -2486,7 +2446,6 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   magicast@0.3.5:
-  magicast@0.5.1:
     dependencies:
       '@babel/parser': 7.28.5
       '@babel/types': 7.28.5
@@ -2522,8 +2481,6 @@ snapshots:
   natural-compare@1.4.0: {}
 
   node-releases@2.0.21: {}
-
-  obug@2.1.1: {}
 
   optionator@0.9.4:
     dependencies:
@@ -2699,8 +2656,6 @@ snapshots:
   tinypool@1.1.1: {}
 
   tinyrainbow@2.0.0: {}
-
-  tinyrainbow@3.0.3: {}
 
   tinyspy@4.0.4: {}
 
