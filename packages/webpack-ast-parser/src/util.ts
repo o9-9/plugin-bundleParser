@@ -66,19 +66,6 @@ export function makeFilteredExportMap(map: ExportEntry<Range>, pos: Position): E
         return null;
     }
 
-    const defaultExport = WebpackAstParser.SYM_CJS_DEFAULT in map && map[WebpackAstParser.SYM_CJS_DEFAULT];
-
-    if (defaultExport) {
-        const filtered = makeFilteredExportMap(defaultExport, pos);
-
-        if (filtered) {
-            return {
-                ...map,
-                [WebpackAstParser.SYM_CJS_DEFAULT]: filtered,
-            };
-        }
-    }
-
     const entries = allEntries(map).map(([k, v]) => {
         if (k === WebpackAstParser.SYM_HOVER) {
             return [k, v as ExportMap<Range>[typeof WebpackAstParser.SYM_HOVER]] as const;

@@ -596,7 +596,7 @@ export class WebpackAstParser extends AstParser {
      * given
      * ```js
      * var mod = n(123456);
-     * ```
+     * ```,
      * @argument dec the variable info for that mod
      * @see {@link getVariableInitializer} which can than be passed into {@link vars|vars.get}
      * @returns `123456`
@@ -650,6 +650,11 @@ export class WebpackAstParser extends AstParser {
             // needed to workaround a v8 bug which crashes when a breakpoint falls on the for loop
             const exportedName = _exportedName;
             const seen: Record<string, Set<String>> = {};
+
+            // FIXME: this is a workaround for a bug in getUsesOfImport where it doesn't properly hand SYM_CJS_DEFAULT
+            if (exportedName.length > 1 && exportedName.at(-1) === WebpackAstParser.SYM_CJS_DEFAULT) {
+                exportedName.pop();
+            }
 
             // the module id that is being searched for uses
             // the ID of the module that exportName will be imported from
@@ -1259,7 +1264,10 @@ export class WebpackAstParser extends AstParser {
                         return;
                     }
                     // TODO: debug assert no entry exists
-                    ret[entryName.getText()] = this.rawMakeExportMapRecursive(right);
+                    ret[entryName.getText()] = [
+                        ...this.rawMakeExportMapRecursive(entryName) as RawExportRange,
+                        ...this.rawMakeExportMapRecursive(right) as RawExportRange,
+                    ];
                     return true;
                 };
 
@@ -1415,8 +1423,7 @@ export class WebpackAstParser extends AstParser {
 
             // FIXME: !trail?.length
             if (!trail || trail.length === 0) {
-                logger.warn("Could not find variable declaration for identifier");
-                return [];
+                return [node];
             }
 
             const last = this.getVariableInitializer(trail.at(-1)!);
