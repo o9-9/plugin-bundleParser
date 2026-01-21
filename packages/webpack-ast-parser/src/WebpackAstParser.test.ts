@@ -22,6 +22,12 @@ describe("WebpackAstParser", function () {
         new WebpackAstParser(normalModule);
     });
 
+    it("getImportedVar returns undefined when wreq is not used", function () {
+        const parser = new WebpackAstParser(getFile("webpack/badModule/noWreq.js"));
+
+        expect(parser.getImportedVar("123456")).to.be.undefined;
+    });
+
     describe("module id", function () {
         it("parses the module ID", function () {
             const parser = new WebpackAstParser(normalModule);

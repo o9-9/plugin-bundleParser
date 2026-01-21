@@ -970,7 +970,7 @@ export class WebpackAstParser extends AstParser {
 
     public getImportedVar(moduleId: string): Identifier | undefined {
         if (!this.wreq)
-            throw new Error("Wreq is not used in this file");
+            return;
 
         const uses = this.uses!.uses.find(({ location }) => {
             const call = findParent(location, isCallExpression);
