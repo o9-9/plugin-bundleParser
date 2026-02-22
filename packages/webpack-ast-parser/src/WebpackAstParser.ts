@@ -107,6 +107,17 @@ export function setLogger(l: Logger): void {
 
 type Nullish = undefined | null;
 
+function error(msg?: string): never {
+    const err = new Error(msg);
+
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/captureStackTrace
+    if ((Error as any).captureStackTrace) {
+        (Error as any).captureStackTrace(err, error);
+    }
+
+    throw err;
+}
+
 export class WebpackAstParser extends AstParser {
     private static defaultModuleCache: (self: WebpackAstParser) => IModuleCache = () => {
         throw new Error("No default module cache set, please set one with WebpackAstParser.setDefaultModuleCache");
@@ -356,7 +367,8 @@ export class WebpackAstParser extends AstParser {
             return;
         }
 
-        const filePath = this.moduleCache.getModuleFilepath(idNode.text);
+        const moduleId = idNode.text;
+        const filePath = this.moduleCache.getModuleFilepath(moduleId);
 
         if (!filePath) {
             return;
@@ -365,8 +377,9 @@ export class WebpackAstParser extends AstParser {
         return [
             {
                 locationType: "file_path",
-                filePath,
                 range: zeroRange,
+                filePath,
+                moduleId,
             },
         ];
     }
@@ -427,6 +440,7 @@ export class WebpackAstParser extends AstParser {
                     range: zeroRange,
                     locationType: "inline",
                     content: cur.text,
+                    moduleId: cur.moduleId ?? error("failed to get module id"),
                 },
             ];
         }
@@ -475,6 +489,7 @@ export class WebpackAstParser extends AstParser {
                 range: maybeRange,
                 locationType: "inline",
                 content: cur.text,
+                moduleId: cur.moduleId ?? error("failed to get module id"),
             },
         ];
     }
@@ -700,12 +715,14 @@ export class WebpackAstParser extends AstParser {
                             range: x,
                             locationType: "file_path",
                             filePath: maybeFilePath,
+                            moduleId: modId,
                         };
                     }
                     return {
                         range: x,
                         locationType: "inline",
                         content: this.text,
+                        moduleId: this.moduleId!,
                     };
                 }));
             }

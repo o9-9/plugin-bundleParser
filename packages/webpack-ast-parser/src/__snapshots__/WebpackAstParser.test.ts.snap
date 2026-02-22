@@ -5,6 +5,7 @@ exports[`WebpackAstParser > cache parsing > definitions > from wreq(number) > fi
   {
     "filePath": "__test__/.modules/555555.js",
     "locationType": "file_path",
+    "moduleId": "555555",
     "range": [
       {
         "character": 0,
@@ -24,6 +25,7 @@ exports[`WebpackAstParser > cache parsing > definitions > from wreq(number) > fi
   {
     "filePath": "__test__/.modules/333333.js",
     "locationType": "file_path",
+    "moduleId": "333333",
     "range": [
       {
         "character": 0,
@@ -76,6 +78,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "333333",
     "range": [
       {
         "character": 13,
@@ -128,6 +131,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "333333",
     "range": [
       {
         "character": 24,
@@ -180,6 +184,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "333333",
     "range": [
       {
         "character": 8,
@@ -232,6 +237,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "333333",
     "range": [
       {
         "character": 8,
@@ -284,6 +290,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "333333",
     "range": [
       {
         "character": 19,
@@ -336,6 +343,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "333333",
     "range": [
       {
         "character": 8,
@@ -388,6 +396,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "333333",
     "range": [
       {
         "character": 8,
@@ -440,6 +449,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "222222",
     "range": [
       {
         "character": 13,
@@ -492,6 +502,7 @@ function(e, t, n) {
 }
 ",
     "locationType": "inline",
+    "moduleId": "333333",
     "range": [
       {
         "character": 13,

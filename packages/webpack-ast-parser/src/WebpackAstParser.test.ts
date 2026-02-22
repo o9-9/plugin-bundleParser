@@ -701,11 +701,15 @@ describe("WebpackAstParser", function () {
         });
 
         function makeLineRange(file: string | number, y1, x1: number, len = 1) {
+            const moduleId = file;
+
             file = `${file}.js`;
+
             return {
                 locationType: "file_path",
                 filePath: posix.join("__test__", ".modules", file),
                 range: new Range(y1, x1, y1, x1 + len),
+                moduleId: String(moduleId),
             } satisfies Reference;
         }
         describe("re-export handling", function () {

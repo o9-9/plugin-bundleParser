@@ -69,9 +69,11 @@ export interface ModuleDeps {
 export type Location = {
     locationType: "file_path";
     filePath: string;
+    moduleId: string;
 } | {
     locationType: "inline";
     content: string;
+    moduleId: string;
 };
 
 export type MainDeps = Record<string, ModuleDep>;
