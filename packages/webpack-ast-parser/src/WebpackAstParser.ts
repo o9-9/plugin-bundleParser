@@ -119,28 +119,28 @@ function error(msg?: string): never {
 }
 
 export class WebpackAstParser extends AstParser {
-    private static defaultModuleCache: (self: WebpackAstParser) => IModuleCache = () => {
+    static #defaultModuleCache: (self: WebpackAstParser) => IModuleCache = () => {
         throw new Error("No default module cache set, please set one with WebpackAstParser.setDefaultModuleCache");
     };
 
     public static setDefaultModuleCache(cache: IModuleCache | ((self: WebpackAstParser) => IModuleCache)): void {
         if (typeof cache === "function") {
-            this.defaultModuleCache = cache;
+            this.#defaultModuleCache = cache;
         } else {
-            this.defaultModuleCache = () => cache;
+            this.#defaultModuleCache = () => cache;
         }
     }
 
-    private static defaultModuleDepManager: (self: WebpackAstParser) => IModuleDepManager = () => {
+    static #defaultModuleDepManager: (self: WebpackAstParser) => IModuleDepManager = () => {
         throw new Error("No default module dependency manager set, please set one with WebpackAstParser.setDefaultModuleDepManager");
     };
 
     // eslint-disable-next-line @stylistic/max-len
     public static setDefaultModuleDepManager(manager: IModuleDepManager | ((self: WebpackAstParser) => IModuleDepManager)): void {
         if (typeof manager === "function") {
-            this.defaultModuleDepManager = manager;
+            this.#defaultModuleDepManager = manager;
         } else {
-            this.defaultModuleDepManager = () => manager;
+            this.#defaultModuleDepManager = () => manager;
         }
     }
 
@@ -185,7 +185,7 @@ export class WebpackAstParser extends AstParser {
      */
     @CacheGetter()
     get wreq(): Identifier | undefined {
-        return this.findWebpackArg(2);
+        return this.#findWebpackArg(2);
     }
 
     /** 
@@ -216,7 +216,7 @@ export class WebpackAstParser extends AstParser {
      */
     @CacheGetter()
     get moduleCache(): IModuleCache {
-        return WebpackAstParser.defaultModuleCache(this);
+        return WebpackAstParser.#defaultModuleCache(this);
     }
 
     /**
@@ -224,7 +224,7 @@ export class WebpackAstParser extends AstParser {
      */
     @CacheGetter()
     get moduleDepManager(): IModuleDepManager {
-        return WebpackAstParser.defaultModuleDepManager(this);
+        return WebpackAstParser.#defaultModuleDepManager(this);
     }
 
     public constructor(text: string) {
@@ -246,10 +246,10 @@ export class WebpackAstParser extends AstParser {
      * @see {@link findWreq_e}
      * @see {@link wreq}
      */
-    private findWebpackArg(paramIndex: number, start: Node = this.sourceFile): Identifier | undefined {
+    #findWebpackArg(paramIndex: number, start: Node = this.sourceFile): Identifier | undefined {
         for (const n of start.getChildren()) {
             if (isSyntaxList(n) || isExpressionStatement(n) || isBinaryExpression(n))
-                return this.findWebpackArg(paramIndex, n);
+                return this.#findWebpackArg(paramIndex, n);
             if (isFunctionExpression(n)) {
                 if (n.parameters.length > 3 || n.parameters.length < paramIndex + 1)
                     return;
@@ -346,7 +346,7 @@ export class WebpackAstParser extends AstParser {
      * ```
      * returns the definitions for that module
      */
-    private generateDirectModuleDefinition(idNode: NumericLiteral): Definition[] | undefined {
+    #generateDirectModuleDefinition(idNode: NumericLiteral): Definition[] | undefined {
         const maybeCall = idNode.parent;
 
         if (!isCallExpression(maybeCall)) {
@@ -391,7 +391,7 @@ export class WebpackAstParser extends AstParser {
         const selectedNode: Node | undefined = this.getTokenAtOffset(this.offsetAt(position));
 
         if (selectedNode && isNumericLiteral(selectedNode)) {
-            return this.generateDirectModuleDefinition(selectedNode);
+            return this.#generateDirectModuleDefinition(selectedNode);
         }
 
         const accessChain = findParent(selectedNode, isPropertyAccessExpression);
@@ -444,9 +444,6 @@ export class WebpackAstParser extends AstParser {
                 },
             ];
         }
-
-        cur;
-        // ^?
 
         while (true) {
             // check for an explicit re-export before falling back to checking for a whole module re-export
@@ -1210,7 +1207,7 @@ export class WebpackAstParser extends AstParser {
     }
 
     // TODO: style3: see enums2.js
-    private tryRawMakeExportMapForEnumIIFE(node: CallExpression): RawExportMap | undefined {
+    #tryRawMakeExportMapForEnumIIFE(node: CallExpression): RawExportMap | undefined {
         // TODO: styles 1 and 2 are very similar, merge code for them?
 
         // style 1
@@ -1357,7 +1354,7 @@ export class WebpackAstParser extends AstParser {
         return undefined;
     }
 
-    private rawMakeExportMapObjectLiteral(node: ObjectLiteralExpression): RawExportMap {
+    #rawMakeExportMapObjectLiteral(node: ObjectLiteralExpression): RawExportMap {
         const props = node.properties
             .map((x): false | [AnyExportKey, RawExportMap[AnyExportKey]][] => {
                 if (isSpreadAssignment(x)) {
@@ -1391,7 +1388,7 @@ export class WebpackAstParser extends AstParser {
         return fromEntries<RawExportMap>(props);
     }
 
-    private rawMakeExportMapPropertyAssignment(node: PropertyAssignment): RawExportMap | RawExportRange {
+    #rawMakeExportMapPropertyAssignment(node: PropertyAssignment): RawExportMap | RawExportRange {
         const objRange = this.rawMakeExportMapRecursive(node.initializer);
 
         if (isExportRange(objRange))
@@ -1402,7 +1399,7 @@ export class WebpackAstParser extends AstParser {
         };
     }
 
-    private rawMakeExportMapFunctionish(node: Functionish) {
+    #rawMakeExportMapFunctionish(node: Functionish) {
         wrapperFuncCheck: {
             if (!node.body)
                 break wrapperFuncCheck;
@@ -1431,8 +1428,8 @@ export class WebpackAstParser extends AstParser {
         return [node];
     }
 
-    private rawMakeExportMapCallExpression(node: CallExpression) {
-        const maybeEnumExport = this.tryRawMakeExportMapForEnumIIFE(node);
+    #rawMakeExportMapCallExpression(node: CallExpression) {
+        const maybeEnumExport = this.#tryRawMakeExportMapForEnumIIFE(node);
 
         if (maybeEnumExport) {
             return maybeEnumExport;
@@ -1441,7 +1438,7 @@ export class WebpackAstParser extends AstParser {
         return [node];
     }
 
-    private rawMakeExportMapIdentifier(node: Identifier) {
+    #rawMakeExportMapIdentifier(node: Identifier) {
         const trail = this.unwrapVariableDeclaration(node);
 
         // FIXME: !trail?.length
@@ -1458,7 +1455,7 @@ export class WebpackAstParser extends AstParser {
         return this.rawMakeExportMapRecursive(last);
     }
 
-    private rawMakeExportMapLiteralish(node: LiteralToken) {
+    #rawMakeExportMapLiteralish(node: LiteralToken) {
         return annotateExportRange(node.getText(), [node]);
     }
 
@@ -1466,17 +1463,17 @@ export class WebpackAstParser extends AstParser {
         if (!node)
             throw new Error("node should not be undefined");
         if (isObjectLiteralExpression(node)) {
-            return this.rawMakeExportMapObjectLiteral(node);
+            return this.#rawMakeExportMapObjectLiteral(node);
         } else if (isLiteralish(node)) {
-            return this.rawMakeExportMapLiteralish(node);
+            return this.#rawMakeExportMapLiteralish(node);
         } else if (isPropertyAssignment(node)) {
-            return this.rawMakeExportMapPropertyAssignment(node);
+            return this.#rawMakeExportMapPropertyAssignment(node);
         } else if (isFunctionish(node)) {
-            return this.rawMakeExportMapFunctionish(node);
+            return this.#rawMakeExportMapFunctionish(node);
         } else if (isCallExpression(node)) {
-            return this.rawMakeExportMapCallExpression(node);
+            return this.#rawMakeExportMapCallExpression(node);
         } else if (isIdentifier(node)) {
-            return this.rawMakeExportMapIdentifier(node);
+            return this.#rawMakeExportMapIdentifier(node);
         }
         return [node];
     }
@@ -2158,7 +2155,7 @@ export class WebpackAstParser extends AstParser {
      */
     @Cache()
     findWreq_t(): Identifier | undefined {
-        return this.findWebpackArg(1);
+        return this.#findWebpackArg(1);
     }
 
     tryFindExportWreq_t(exportName: string): Range | undefined {
@@ -2186,7 +2183,7 @@ export class WebpackAstParser extends AstParser {
      */
     @Cache()
     findWreq_e(): Identifier | undefined {
-        return this.findWebpackArg(0);
+        return this.#findWebpackArg(0);
     }
 
     tryFindExportsWreq_e(exportName: string): Range | undefined {
