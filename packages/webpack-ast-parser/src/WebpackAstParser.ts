@@ -475,9 +475,6 @@ export class WebpackAstParser extends AstParser {
             }
         }
 
-        cur;
-        // ^?
-
         const maybeRange: Range = cur
             .findExportLocation(names.map((x) => x.text));
 
