@@ -2176,4 +2176,74 @@ export class WebpackAstParser extends AstParser {
 
         return null;
     }
+
+    @Cache()
+    public async generateAllHoverText(): Promise<(readonly [location: Range, text: string])[]> {
+        // get the hover text for all of our imports
+        const { sync: imports } = this.getModulesThatThisModuleRequires() ?? {};
+
+        // if we don't import anything, we don't have anything to show hover text for
+        if (!imports?.length) {
+            return [];
+        }
+
+        const ret: (readonly [location: Range, text: string])[] = [];
+
+        for (const moduleId of imports) {
+            // importedVar
+            const iVar = this.getImportedVar(moduleId);
+
+            if (!iVar) {
+                continue;
+            }
+
+            // TODO: some code here can probably be merged with getUsesOfImport
+            const varInfo = this.vars.get(iVar);
+
+            if (!varInfo) {
+                logger.warn("could not find var info for imported var");
+                continue;
+            }
+
+            const parser = await this.#tryGetModuleParser(moduleId);
+
+            if (!parser) {
+                continue;
+            }
+
+            for (const { location } of varInfo.uses) {
+                let cur: PropertyAccessExpression | Identifier = location;
+
+                if (!isPropertyAccessExpression(cur.parent)) {
+                    const defaultText = parser.getHoverText([WebpackAstParser.SYM_CJS_DEFAULT]);
+
+                    if (defaultText) {
+                        ret.push([this.makeRangeFromAstNode(location), defaultText]);
+                    }
+
+                    break;
+                }
+
+                const nameChain = [];
+
+                do {
+                    const { name } = cur = cur.parent;
+
+                    if (!isIdentifier(name)) {
+                        break;
+                    }
+
+                    nameChain.push(name.text);
+
+                    const text = parser.getHoverText(nameChain);
+
+                    if (text) {
+                        ret.push([this.makeRangeFromAstNode(cur), text]);
+                    }
+                } while (isPropertyAccessExpression(cur.parent));
+            }
+        }
+
+        return ret;
+    }
 }

@@ -953,6 +953,12 @@ describe("WebpackAstParser", function () {
                 expect(hover2)
                     .toMatchSnapshot();
             });
+            describe("for entire module", () => {
+                it.todo("works 1", async () => {
+                    // const parser = new WebpackAstParser(getFile(".modules/111111.js"));
+                    // const hover = await parser.generateAllHoverText();
+                });
+            });
         });
     });
     describe("flux parsing", function () {
