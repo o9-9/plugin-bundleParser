@@ -2119,6 +2119,49 @@ export class WebpackAstParser extends AstParser {
         return this.#findWebpackArg(0);
     }
 
+    // TODO: support lazy requires
+    public async getAllReExportsForExport(exportName: AnyExportKey):
+    Promise<[moduleId: string, exportChain: AnyExportKey[]][]> {
+        type R = [moduleId: string, exportChain: AnyExportKey[]][];
+
+        const ret: R = [];
+        const thisExports = this.getExportMapRaw();
+
+        if (!thisExports[exportName]) {
+            throw new Error(`Export ${exportName.toString()} not found in module ${this.moduleId}`);
+        }
+
+        type SearchItem = readonly [parser: WebpackAstParser, moduleId: string, exportName: AnyExportKey];
+
+        const toSearch: SearchItem[]
+            = this.getModulesThatRequireThisModule()
+                ?.sync
+                ?.map((mod) => [this, mod, exportName] as const)
+                ?? [];
+
+        let cur: SearchItem | undefined;
+
+        while ((cur = toSearch.pop())) {
+            const [thisParser, moduleId, exportName] = cur;
+            const otherParser = await this._moduleCache.getModuleParser(this, moduleId);
+
+            if (!(thisParser.moduleId && otherParser.moduleId)) {
+                throw new Error("Module is is not set, this should not happen");
+            }
+
+            const otherReExportName = otherParser.doesReExportFromImport(thisParser.moduleId, exportName);
+
+            if (otherReExportName) {
+                ret.push([otherParser.moduleId, [otherReExportName]]);
+                for (const mod of otherParser.getModulesThatRequireThisModule()?.sync ?? []) {
+                    toSearch.push([otherParser, mod, otherReExportName]);
+                }
+            }
+        }
+
+        return ret;
+    }
+
     /**
      * @returns the string of the export if this is the flux dispatcher module, null otherwise
      * @Cache
