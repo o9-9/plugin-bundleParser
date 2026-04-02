@@ -1,8 +1,7 @@
 import type { VariableInfo } from "ts-api-utils";
-import { type Expression, isArrowFunction, isCallExpression, isElementAccessExpression, isIdentifier, isNumericLiteral, isObjectLiteralExpression, isPropertyAccessExpression, isPropertyAssignment, isStringLiteralLike, isVariableDeclaration, type ObjectLiteralElementLike, type ObjectLiteralExpression, type PropertyName } from "typescript";
+import { type ArrowFunction, type Expression, isArrowFunction, isCallExpression, isElementAccessExpression, isIdentifier, isNumericLiteral, isObjectLiteralExpression, isPropertyAccessExpression, isPropertyAssignment, isStringLiteralLike, isVariableDeclaration, type ObjectLiteralElementLike, type ObjectLiteralExpression, type PropertyName } from "typescript";
 
-import type { Functionish } from "@vencord-companion/ast-parser/types";
-import { findParent, isAssignmentExpression, isBinaryPlusExpression, isFunctionish, lastChild, nonNull, tryParseStringOrNumberLiteral } from "@vencord-companion/ast-parser/util";
+import { findParent, isAssignmentExpression, isBinaryPlusExpression, lastChild, nonNull, tryParseStringOrNumberLiteral } from "@vencord-companion/ast-parser/util";
 import { Cache, CacheGetter } from "@vencord-companion/shared/decorators";
 
 import type { JSHashEntry } from "./types";
@@ -43,7 +42,7 @@ export class WebpackMainChunkParser extends WebpackChunkParser {
             return [];
         }
 
-        let uFunc: Functionish | undefined;
+        let uFunc: ArrowFunction | undefined;
 
         foundU: {
             for (const { location: { parent } } of uses) {
@@ -58,17 +57,13 @@ export class WebpackMainChunkParser extends WebpackChunkParser {
 
                 const maybeAssign = parent.parent;
 
-                if (!isAssignmentExpression(maybeAssign) || !isFunctionish(maybeAssign.right)) {
+                if (!isAssignmentExpression(maybeAssign) || !isArrowFunction(maybeAssign.right)) {
                     continue;
                 }
 
                 uFunc = maybeAssign.right;
                 break foundU;
             }
-            return [];
-        }
-
-        if (!isArrowFunction(uFunc)) {
             return [];
         }
 
