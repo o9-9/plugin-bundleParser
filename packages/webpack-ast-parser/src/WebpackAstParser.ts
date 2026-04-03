@@ -980,7 +980,7 @@ export class WebpackAstParser extends AstParser {
         if (!this._wreq)
             return;
 
-        const uses = this._uses!.uses.find(({ location }) => {
+        const usage = this._uses!.uses.find(({ location }) => {
             const call = findParent(location, isCallExpression);
 
             return (
@@ -988,7 +988,7 @@ export class WebpackAstParser extends AstParser {
             );
         });
 
-        const ret = findParent(uses?.location, isVariableDeclaration)?.name;
+        const ret = findParent(usage?.location, isVariableDeclaration)?.name;
 
         if (ret && isIdentifier(ret))
             return ret;
